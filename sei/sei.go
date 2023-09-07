@@ -87,9 +87,22 @@ func (s *SEI) UnmarshalBinary(data []byte) error {
 	if len(data) < 2 {
 		return errors.New("invalid sei size")
 	}
-	s.UnmarshalHeader(data)
+	realData := make([]byte, 0)
 
-	s.data = data[2:]
+	// 如果连续三个字节为0x000003，跳过其中的0x03，同时i递增2
+	for i := 0; i < len(data); i++ {
+		if i+2 < len(data) && data[i] == 0x00 && data[i+1] == 0x00 && data[i+2] == 0x03 {
+			realData = append(realData, data[i])
+			realData = append(realData, data[i+1])
+			i += 2
+		} else {
+			realData = append(realData, data[i])
+		}
+	}
+
+	s.UnmarshalHeader(realData)
+
+	s.data = realData[2:]
 
 	return nil
 }
